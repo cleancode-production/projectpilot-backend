@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // moderne JS-Features
+    "module": "CommonJS", // Standard für Node.js / Express
+    "rootDir": "src", // dein Quellcode-Ordner
+    "outDir": "dist", // Kompilierte JS-Dateien
+    "strict": true, // maximale Typprüfung
+    "esModuleInterop": true, // Import-Kompatibilität
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true // schnellere Builds, weniger Probleme
+  },
+  "include": ["src"]
+}

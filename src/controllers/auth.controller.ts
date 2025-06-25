@@ -1,12 +1,33 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import prisma from "../lib/prisma";
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, firstName, lastName, username } = req.body;
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+
+  if (existingUser) {
+    res.status(400).json({ message: "User already exists" });
+    return;
+  }
   const hashedPassword = await bcrypt.hash(password, 12);
-  //noch keine DB
-  res.status(201).json({ message: "User registred", email, hashedPassword });
+  const fullName = firstName + " " + lastName;
+
+  const newUser = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      fullName,
+      username,
+      role: "USER",
+      lastLogin: new Date(),
+    },
+  });
+  res.status(201).json({ message: "User registred", userId: newUser.id });
 };
 
 export const loginUser = async (
@@ -17,15 +38,14 @@ export const loginUser = async (
   try {
     const { email, password } = req.body;
 
-    // fake user vorbereiten
-    const hashedPassword = await bcrypt.hash("123456", 12);
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    const fakeUser = {
-      email: "test@bla.com",
-      password: hashedPassword,
-    };
+    if (!user) {
+      res.status(401).json({ message: "Invalid credentials" });
+      return;
+    }
 
-    const isValid = await bcrypt.compare(password, fakeUser.password);
+    const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       res.status(401).json({ message: "Invalid credentials" });
       return;

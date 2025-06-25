@@ -33,7 +33,7 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { email, password } = req.body;

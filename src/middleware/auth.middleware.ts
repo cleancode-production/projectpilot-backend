@@ -15,7 +15,7 @@ export const verifyToken = (
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    req.body.user = decoded; // später hier typisieren
+    req.user = decoded; // später hier typisieren
     next();
   } catch (err) {
     res.status(403).json({ message: "Invalid token" });

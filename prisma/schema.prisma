@@ -61,24 +61,25 @@ enum NotificationType {
 }
 
 model User {
-  id              String            @id @default(uuid())
+  id              String   @id @default(uuid())
   firstName       String
   lastName        String
   fullName        String
-  username        String            @unique
-  email           String            @unique
+  username        String   @unique
+  email           String   @unique
   password        String
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   role            Role
-  emailVerified   Boolean
-  lastLogin       DateTime
-  profileImageURL String
-  isActive        Boolean
-  authProvider    String
-  bio             String
-  timezone        String
-  providerId      String
+  emailVerified   Boolean  @default(false)
+  lastLogin       DateTime @default(now())
+  profileImageURL String? // optional
+  isActive        Boolean  @default(true)
+  authProvider    String? // optional (z. B. "google", "credentials")
+  bio             String? // optional
+  timezone        String? // optional (z. B. "Europe/Berlin")
+  providerId      String? // optional (z. B. Google-ID)
+
   workspaces      Workspace[]
   memberships     WorkspaceMember[]
   createdTasks    Task[]            @relation("TaskCreator")

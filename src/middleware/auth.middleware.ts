@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 export const verifyToken = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
@@ -15,7 +15,7 @@ export const verifyToken = (
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    req.body.user = decoded; // später hier typisieren
+    req.user = decoded; // später hier typisieren
     next();
   } catch (err) {
     res.status(403).json({ message: "Invalid token" });

@@ -1,0 +1,270 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+  GUEST
+}
+
+enum WorkspaceRole {
+  OWNER
+  MEMBER
+  GUEST
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum EventStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum EventType {
+  MEETING
+  DEADLINE
+  REMINDER
+  CUSTOM
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  TASK_ASSIGNED
+  COMMENT
+  INVITE
+}
+
+model User {
+  id              String            @id @default(uuid())
+  firstName       String
+  lastName        String
+  fullName        String
+  username        String            @unique
+  email           String            @unique
+  password        String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  role            Role
+  emailVerified   Boolean
+  lastLogin       DateTime
+  profileImageURL String
+  isActive        Boolean
+  authProvider    String
+  bio             String
+  timezone        String
+  providerId      String
+  workspaces      Workspace[]
+  memberships     WorkspaceMember[]
+  createdTasks    Task[]            @relation("TaskCreator")
+  assignedTasks   Task[]            @relation("TaskAssignee")
+  projectComments ProjectComment[]  @relation("ProjectCommenter")
+  taskComments    TaskComment[]     @relation("TaskCommenter")
+  createdNotes    Note[]
+  uploadedFiles   File[]
+  events          Event[]
+  notifications   Notification[]
+  tags            Tag[]
+}
+
+model Workspace {
+  id        String            @id @default(uuid())
+  name      String
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  projects  Project[]
+  members   WorkspaceMember[]
+  tags      Tag[]
+}
+
+model Project {
+  id          String           @id @default(uuid())
+  title       String
+  description String
+  workspaceId String
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
+  isArchived  Boolean
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  tasks       Task[]
+  comments    ProjectComment[]
+  notes       Note[]
+  files       File[]
+  events      Event[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole
+  joinedAt    DateTime      @default(now())
+  invitedBy   String? // optional → ID des einladenden Users
+  isActive    Boolean? // optional → z. B. Einladung angenommen?
+  user        User          @relation(fields: [userId], references: [id])
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+}
+
+model Task {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id])
+  assignedTo  String?
+  assignee    User?         @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  createdBy   String
+  creator     User          @relation("TaskCreator", fields: [createdBy], references: [id])
+  status      TaskStatus
+  priority    TaskPriority?
+  dueDate     DateTime
+  position    Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  comments    TaskComment[]
+  tags        TaskTag[]
+}
+
+model ProjectComment {
+  id        String   @id @default(uuid())
+  content   String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  author    String
+  user      User     @relation("ProjectCommenter", fields: [author], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  author    String
+  user      User     @relation("TaskCommenter", fields: [author], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  content   String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+}
+
+model File {
+  id   String @id @default(uuid())
+  name String
+  url  String // z. B. S3-Link oder Supabase-Storage
+  type String // MIME-Type: "application/pdf", "image/png", etc.
+  size Int // in Bytes
+
+  uploadedAt DateTime @default(now())
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  start       DateTime
+  end         DateTime
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  status EventStatus
+  type   EventType
+
+  recurrence     String?
+  recurrenceRule String?
+
+  isPrivate Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  title String
+  body  String?
+
+  type NotificationType
+
+  entityId   String // z. B. ID von Task, Comment, Event etc.
+  entityType String? // z. B. "TASK", "COMMENT", "PROJECT" – frei wählbar
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String
+  color String
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  teamId    String?
+  workspace Workspace? @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime  @default(now())
+  tasks     TaskTag[]
+}
+
+model TaskTag {
+  id     String @id @default(uuid())
+  taskId String
+  tagId  String
+
+  task Task @relation(fields: [taskId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+}

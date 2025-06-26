@@ -29,7 +29,7 @@ export const registerUser = async (req: Request, res: Response) => {
     },
   });
 
-  await prisma.workspace.create({
+  const workspace = await prisma.workspace.create({
     data: {
       name: "My Workspace",
       userId: newUser.id,
@@ -48,9 +48,12 @@ export const registerUser = async (req: Request, res: Response) => {
     { expiresIn: "1h" },
   );
 
-  res
-    .status(201)
-    .json({ message: "User registered", userId: newUser.id, token });
+  res.status(201).json({
+    message: "User registered",
+    userId: newUser.id,
+    token,
+    workspaceId: workspace.id,
+  });
 };
 
 export const loginUser = async (
@@ -79,6 +82,15 @@ export const loginUser = async (
       throw new Error("JWT_SECRET is not defined in .env");
     }
 
+    const workspace = await prisma.workspace.findFirst({
+      where: {
+        OR: [{ userId: user.id }, { members: { some: { userId: user.id } } }],
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -87,7 +99,12 @@ export const loginUser = async (
       },
     );
 
-    res.json({ message: "Login successful", token });
+    res.json({
+      message: "Login successful",
+      token,
+      workspaceId: workspace?.id || null,
+      userId: user.id,
+    });
   } catch (err) {
     next(err);
   }

@@ -2,10 +2,10 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";
-import prisma from "./lib/prisma";
 import userRoutes from "./routes/user.route";
 import projectRoutes from "./routes/project.route";
 import taskRoutes from "./routes/task.route";
+import workspaceRoutes from "./routes/workspace.route";
 
 dotenv.config();
 const app = express();
@@ -19,8 +19,10 @@ app.get("/", (_, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/", userRoutes);
-app.use("/");
+app.use("/api/user", userRoutes);
+app.use("/api/workspaces", workspaceRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/tasks", taskRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

@@ -60,10 +60,10 @@ export const getWorkspaceProjects = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.userId;
-  const workspaceId = req.params.id;
+  const workspaceId = req.query.workspaceId as string;
 
-  if (!userId) {
-    res.status(401).json({ message: "Unauthorized" });
+  if (!userId || !workspaceId) {
+    res.status(401).json({ message: "missing user or workspaceId" });
     return;
   }
 
@@ -138,6 +138,54 @@ export const getProjectById = async (
     res.json(project);
   } catch (err) {
     console.error("getProjectById error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// delete project
+
+export const deleteProjectById = async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const projectId = req.params.id;
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  try {
+    // 1. Projekt holen + zugehörigen Workspace ermitteln
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { workspaceId: true },
+    });
+
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return;
+    }
+
+    // 2. Prüfen, ob der User Mitglied im Workspace ist
+    const isMember = await prisma.workspaceMember.findFirst({
+      where: {
+        userId,
+        workspaceId: project.workspaceId,
+      },
+    });
+
+    if (!isMember) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    // 3. Projekt löschen
+    await prisma.project.delete({
+      where: { id: projectId },
+    });
+
+    res.status(200).json({ message: "Project deleted successfully" });
+  } catch (error) {
+    console.error("deleteProjectById error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

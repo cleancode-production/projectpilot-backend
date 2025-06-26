@@ -5,7 +5,7 @@ import prisma from "../lib/prisma";
 
 export const createProject = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const { title, description, workspaceId } = req.body;
   const userId = req.user?.userId;
@@ -57,7 +57,7 @@ export const createProject = async (
 
 export const getWorkspaceProjects = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const userId = req.user?.userId;
   const workspaceId = req.params.id;
@@ -97,7 +97,7 @@ export const getWorkspaceProjects = async (
 
 export const getProjectById = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const projectId = req.params.id;
 
@@ -142,7 +142,7 @@ export const getProjectById = async (
   }
 };
 
-// delet project
+// delete project
 
 export const deleteProjectById = async (req: Request, res: Response) => {
   const projectId = req.params.id;

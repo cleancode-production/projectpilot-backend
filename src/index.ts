@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";
 import prisma from "./lib/prisma";
+import userRoutes from "./routes/user.route";
 
 dotenv.config();
 const app = express();
@@ -16,6 +17,7 @@ app.get("/", (_, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/", userRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

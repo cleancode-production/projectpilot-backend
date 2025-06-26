@@ -145,7 +145,7 @@ model Task {
   creator     User          @relation("TaskCreator", fields: [createdBy], references: [id])
   status      TaskStatus
   priority    TaskPriority?
-  dueDate     DateTime
+  dueDate     DateTime? 
   position    Int
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

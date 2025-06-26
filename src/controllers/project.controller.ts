@@ -141,3 +141,26 @@ export const getProjectById = async (
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// delet project
+
+export const deleteProjectById = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+
+  if (!req.user) {
+    res.status(401).json({ message: "invalid token" });
+    return;
+  }
+
+  try {
+    await prisma.project.delete({
+      where: { id: projectId },
+    });
+    res.status(200).json({ message: "project deleted" });
+    return;
+  } catch (error) {
+    console.error("Deletion of Project failed", error);
+    res.status(500).json({ message: "failed to delete project" });
+    return;
+  }
+};

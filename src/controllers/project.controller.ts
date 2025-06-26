@@ -92,3 +92,52 @@ export const getWorkspaceProjects = async (
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+//getProject by id
+
+export const getProjectById = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const projectId = req.params.id;
+
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        isArchived: true,
+        updatedAt: true,
+        createdAt: true,
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tasks: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            priority: true,
+            dueDate: true,
+            position: true,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return;
+    }
+
+    res.json(project);
+  } catch (err) {
+    console.error("getProjectById error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

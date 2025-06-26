@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma";
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { email, password, firstName, lastName, username } = req.body;
+  const { password, firstName, lastName, username } = req.body;
+  const email = req.body.email.trim().toLowerCase();
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -27,7 +28,29 @@ export const registerUser = async (req: Request, res: Response) => {
       lastLogin: new Date(),
     },
   });
-  res.status(201).json({ message: "User registred", userId: newUser.id });
+
+  await prisma.workspace.create({
+    data: {
+      name: "My Workspace",
+      userId: newUser.id,
+      members: {
+        create: {
+          userId: newUser.id,
+          role: "OWNER",
+        },
+      },
+    },
+  });
+
+  const token = jwt.sign(
+    { userId: newUser.id, email: newUser.email, role: newUser.role },
+    process.env.JWT_SECRET!,
+    { expiresIn: "1h" },
+  );
+
+  res
+    .status(201)
+    .json({ message: "User registered", userId: newUser.id, token });
 };
 
 export const loginUser = async (
@@ -36,7 +59,8 @@ export const loginUser = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = req.body.email.trim().toLowerCase();
 
     const user = await prisma.user.findUnique({ where: { email } });
 
@@ -55,9 +79,13 @@ export const loginUser = async (
       throw new Error("JWT_SECRET is not defined in .env");
     }
 
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      },
+    );
 
     res.json({ message: "Login successful", token });
   } catch (err) {

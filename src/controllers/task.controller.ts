@@ -40,3 +40,24 @@ export const createTask = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error " });
   }
 };
+
+export const getTasksByProject = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+
+  if (!req.user) {
+    res.status(401).json({ message: "Invalid token" });
+    return;
+  }
+
+  try {
+    const tasks = await prisma.task.findMany({
+      where: { projectId },
+      orderBy: { position: "asc" }, // sortiere fürs Board
+    });
+
+    res.json(tasks);
+  } catch (err) {
+    console.error("Error in getTasksByProject:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

@@ -4,7 +4,7 @@ import { createTask, getTasksByProject } from "../controllers/task.controller";
 
 const router = Router();
 
-router.post("/projects/:id/tasks", verifyToken, createTask);
-router.get("/projects/:id/tasks", verifyToken, getTasksByProject);
+router.post("/project/:id/tasks", verifyToken, createTask);
+router.get("/project/:id/tasks", verifyToken, getTasksByProject);
 
 export default router;

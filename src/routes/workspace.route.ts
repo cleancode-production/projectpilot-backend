@@ -16,9 +16,10 @@ const router = Router();
 router.use(verifyToken);
 
 router.get("/", getAllWorkspaces);
+router.get("/:id", getWorkspacebyId);
 router.get("/last", getLastUpdatedWorkspace);
-router.patch("/:id", createWorkspace);
-router.post("/", updateWorkspace);
+router.post("/:id", createWorkspace);
+router.patch("/", updateWorkspace);
 router.post(
   "/:workspaceId/members",
   verifyToken,

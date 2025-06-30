@@ -23,19 +23,19 @@ router.post(
   "/:workspaceId/members",
   verifyToken,
   isWorkspaceOwner,
-  addWorkspaceMember
+  addWorkspaceMember,
 );
 router.delete(
   "/:workspaceId/members/:userId",
   verifyToken,
   isWorkspaceOwner,
-  removeMember
+  removeMember,
 );
 router.patch(
   "/:wokrspaceId/members/:userId",
   verifyToken,
   isWorkspaceOwner,
-  updateMemberRole
+  updateMemberRole,
 );
 
 export default router;

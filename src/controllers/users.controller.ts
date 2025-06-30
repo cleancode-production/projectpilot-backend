@@ -59,30 +59,16 @@ export const getUserById = async (req: Request, res: Response) => {
 // ✅ PATCH /users/:id
 export const updateUserById = async (req: Request, res: Response) => {
   const userId = req.params.id;
-  const {
-    fullName,
-    username,
-    email,
-    role,
-    isActive,
-    profileImageURL,
-    bio,
-    timezone,
-  } = req.body;
+  const { role, isActive } = req.body;
+
+  const updateData: Record<string, any> = {};
+  if (role !== undefined) updateData.role = role;
+  if (isActive !== undefined) updateData.isActive = isActive;
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        fullName,
-        username,
-        email,
-        role,
-        isActive,
-        profileImageURL,
-        bio,
-        timezone,
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,

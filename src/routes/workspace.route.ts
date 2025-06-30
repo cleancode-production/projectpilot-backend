@@ -4,8 +4,11 @@ import {
   createWorkspace,
   getLastUpdatedWorkspace,
   updateWorkspace,
+  addWorkspaceMember,
+  removeMember,
 } from "../controllers/workspace.controller";
 import { verifyToken } from "../middleware/auth.middleware";
+import { isWorkspaceOwner } from "../middleware/role.middleware";
 
 const router = Router();
 
@@ -15,5 +18,17 @@ router.get("/", getAllWorkspaces);
 router.get("/last", getLastUpdatedWorkspace);
 router.patch("/:id", createWorkspace);
 router.post("/", updateWorkspace);
+router.post(
+  "/:workspaceId/members",
+  verifyToken,
+  isWorkspaceOwner,
+  addWorkspaceMember
+);
+router.delete(
+  "/:workspaceId/members/:userId",
+  verifyToken,
+  isWorkspaceOwner,
+  removeMember
+);
 
 export default router;

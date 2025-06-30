@@ -42,16 +42,38 @@ export const registerUser = async (req: Request, res: Response) => {
     },
   });
 
-  const token = jwt.sign(
+  const accessToken = jwt.sign(
     { userId: newUser.id, email: newUser.email, role: newUser.role },
     process.env.JWT_SECRET!,
-    { expiresIn: "1h" },
+    { expiresIn: "15m" },
   );
+
+  const refreshToken = jwt.sign(
+    { userId: newUser.id, email: newUser.email, role: newUser.role },
+    process.env.REFRESH_TOKEN_SECRET!,
+    { expiresIn: "7d" },
+  );
+
+  // Speichern des Refresh Tokens in der DB
+  await prisma.refreshToken.create({
+    data: {
+      token: refreshToken,
+      userId: newUser.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 Tage
+    },
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
 
   res.status(201).json({
     message: "User registered",
     userId: newUser.id,
-    token,
+    accessToken,
     workspaceId: workspace.id,
   });
 };
@@ -81,6 +103,9 @@ export const loginUser = async (
     if (!process.env.JWT_SECRET) {
       throw new Error("JWT_SECRET is not defined in .env");
     }
+    if (!process.env.REFRESH_TOKEN_SECRET) {
+      throw new Error("REFRESH_TOKEN_SECRET is not defined in .env");
+    }
 
     const workspace = await prisma.workspace.findFirst({
       where: {
@@ -91,21 +116,93 @@ export const loginUser = async (
       },
     });
 
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1h",
+        expiresIn: "15m",
       },
     );
 
-    res.json({
+    const refreshToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.REFRESH_TOKEN_SECRET!,
+      { expiresIn: "7d" },
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.status(200).json({
       message: "Login successful",
-      token,
+      accessToken,
       workspaceId: workspace?.id || null,
       userId: user.id,
     });
   } catch (err) {
     next(err);
   }
+};
+
+export const refreshTokenAccess = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    res.status(401).json({ message: "No refresh token provided" });
+    return;
+  }
+
+  try {
+    // Überprüfen, ob der Refresh Token in der DB existiert und nicht zurückgezogen wurde
+    const storedToken = await prisma.refreshToken.findFirst({
+      where: { token: refreshToken, revoked: false },
+    });
+
+    if (!storedToken) {
+      res.status(403).json({ message: "Invalid refresh token" });
+      return;
+    }
+
+    // Token validieren
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET!,
+    ) as jwt.JwtPayload;
+
+    // Neuen Access-Token erstellen
+    const newAccessToken = jwt.sign(
+      { userId: decoded.userId, email: decoded.email, role: decoded.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: "15m" },
+    );
+
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    res.status(403).json({ message: "Invalid refresh token" });
+    return;
+  }
+};
+
+export const logoutUser = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (refreshToken) {
+    // Refresh Token in DB als "revoked" kennzeichnen
+    await prisma.refreshToken.update({
+      where: { token: refreshToken },
+      data: { revoked: true },
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+  }
+
+  res.status(200).json({ message: "Logged out successfully" });
 };

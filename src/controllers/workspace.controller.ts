@@ -28,6 +28,47 @@ export const getAllWorkspaces = async (req: Request, res: Response) => {
   }
 };
 
+export const getWorkspaceById = async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const workspaceId = req.params.id;
+  if (!userId) {
+    res.status(401).json({ message: "Invalid token" });
+    return;
+  }
+  if (!workspaceId) {
+    res.status(400).json({ message: "Workspace ID is required" });
+    return;
+  }
+  try {
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      include: {
+        members: true,
+        projects: true,
+      },
+    });
+
+    if (!workspace) {
+      res.status(404).json({ message: "Workspace not found" });
+      return;
+    }
+
+    // Check if the user is a member of the workspace
+    const isMember = workspace.members.some(
+      (member) => member.userId === userId,
+    );
+    if (!isMember && workspace.userId !== userId) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    res.status(200).json(workspace);
+  } catch (error) {
+    console.error("Error fetching workspace:", error);
+    res.status(500).json({ message: "Server error while fetching workspace" });
+  }
+};
+
 // Neuen Workspace anlegen
 export const createWorkspace = async (req: Request, res: Response) => {
   try {

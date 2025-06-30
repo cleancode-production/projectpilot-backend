@@ -6,6 +6,7 @@ import {
   updateWorkspace,
   addWorkspaceMember,
   removeMember,
+  updateMemberRole,
 } from "../controllers/workspace.controller";
 import { verifyToken } from "../middleware/auth.middleware";
 import { isWorkspaceOwner } from "../middleware/role.middleware";
@@ -29,6 +30,12 @@ router.delete(
   verifyToken,
   isWorkspaceOwner,
   removeMember
+);
+router.patch(
+  "/:wokrspaceId/members/:userId",
+  verifyToken,
+  isWorkspaceOwner,
+  updateMemberRole
 );
 
 export default router;

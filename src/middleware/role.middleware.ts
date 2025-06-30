@@ -13,7 +13,7 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 export const isWorkspaceMember = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const userId = req.user?.userId;
   const workspaceId = req.params.workspaceId || req.body.workspaceId;
@@ -49,7 +49,7 @@ export const isWorkspaceMember = async (
 export const isWorkspaceOwner = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const userId = req.user?.userId;
   const workspaceId = req.params.workspaceId || req.body.workspaceId;
@@ -86,7 +86,7 @@ export const isWorkspaceOwner = async (
 export const isAdminOrSelf = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const currentUserId = req.user?.userId;
   const targetUserId = req.params.id;
@@ -102,7 +102,7 @@ export const isAdminOrSelf = (
 export const isProjectMember = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const projectId = req.params.id;
   const userId = req.user?.userId;

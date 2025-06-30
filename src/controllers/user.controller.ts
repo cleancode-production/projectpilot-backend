@@ -61,7 +61,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 
 export const deleteUserById = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const userId = req.user?.userId;
 
@@ -84,7 +84,7 @@ export const deleteUserById = async (
 
 export const updateUserProfile = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const userId = req.user?.userId;
 

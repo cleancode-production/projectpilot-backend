@@ -224,3 +224,66 @@ export const removeMember = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error while removing member" });
   }
 };
+
+export const updateMemberRole = async (req: Request, res: Response) => {
+  const workspaceId = req.params.workspaceId;
+  const userId = req.params.userId;
+  const { role } = req.body;
+
+  if (!["OWNER", "MEMBER", "GUEST"].includes(role)) {
+    res.status(400).json({ message: "Invalid role value" });
+    return;
+  }
+
+  try {
+    const member = await prisma.workspaceMember.findFirst({
+      where: {
+        userId,
+        workspaceId,
+      },
+    });
+
+    if (!member) {
+      res
+        .status(404)
+        .json({ message: "User is not a member of this workspace" });
+      return;
+    }
+
+    // Verhindere, dass der letzte OWNER sich selbst entfernt
+    if (member.role === "OWNER" && role !== "OWNER") {
+      const otherOwners = await prisma.workspaceMember.count({
+        where: {
+          workspaceId,
+          role: "OWNER",
+          userId: { not: userId },
+        },
+      });
+
+      if (otherOwners === 0) {
+        res.status(400).json({
+          message: "Cannot remove the last OWNER from the workspace",
+        });
+        return;
+      }
+    }
+
+    const updatedMember = await prisma.workspaceMember.update({
+      where: { id: member.id },
+      data: { role },
+    });
+
+    res.status(200).json({
+      message: `Role updated to ${role}`,
+      member: {
+        id: updatedMember.id,
+        userId: updatedMember.userId,
+        workspaceId: updatedMember.workspaceId,
+        role: updatedMember.role,
+      },
+    });
+  } catch (error) {
+    console.error("[updateWorkspaceMemberRole] Error:", error);
+    res.status(500).json({ message: "Failed to update member role" });
+  }
+};

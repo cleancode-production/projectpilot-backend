@@ -166,14 +166,15 @@ export const deleteProjectById = async (req: Request, res: Response) => {
     }
 
     // 2. Prüfen, ob der User Mitglied im Workspace ist
-    const isMember = await prisma.workspaceMember.findFirst({
+    const isOwner = await prisma.workspaceMember.findFirst({
       where: {
         userId,
         workspaceId: project.workspaceId,
+        role: "OWNER",
       },
     });
 
-    if (!isMember) {
+    if (!isOwner) {
       res.status(403).json({ message: "Access denied" });
       return;
     }
@@ -186,6 +187,59 @@ export const deleteProjectById = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Project deleted successfully" });
   } catch (error) {
     console.error("deleteProjectById error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateProject = async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const projectId = req.params.id;
+  const { title, description, isArchived } = req.body;
+
+  const dataToUpdate: Record<string, any> = {};
+  if (title !== undefined) dataToUpdate.title = title;
+  if (description !== undefined) dataToUpdate.description = description;
+  if (isArchived !== undefined) dataToUpdate.isArchived = isArchived;
+
+  if (!userId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  try {
+    // 1. Projekt holen + zugehörigen Workspace ermitteln
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { workspaceId: true },
+    });
+
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return;
+    }
+
+    // 2. Prüfen, ob der User Mitglied im Workspace ist
+    const isMember = await prisma.workspaceMember.findFirst({
+      where: {
+        userId,
+        workspaceId: project.workspaceId,
+      },
+    });
+
+    if (!isMember) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    // 3. Projekt aktualisieren
+    const updatedProject = await prisma.project.update({
+      where: { id: projectId },
+      data: dataToUpdate,
+    });
+
+    res.status(200).json(updatedProject);
+  } catch (error) {
+    console.error("updateProject error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

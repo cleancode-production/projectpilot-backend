@@ -91,6 +91,7 @@ model User {
   events          Event[]
   notifications   Notification[]
   tags            Tag[]
+  refreshTokens   RefreshToken[]
 }
 
 model Workspace {
@@ -268,4 +269,15 @@ model TaskTag {
 
   task Task @relation(fields: [taskId], references: [id])
   tag  Tag  @relation(fields: [tagId], references: [id])
+}
+
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  revoked    Boolean  @default(false)
 }

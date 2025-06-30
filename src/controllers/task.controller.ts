@@ -177,9 +177,17 @@ export const updateTask = async (req: Request, res: Response) => {
     priority,
     status,
     assignedTo,
-    tags,
-    comments,
+    position,
   } = req.body;
+
+  const dataToUpdate: Record<string, any> = {};
+  if (title !== undefined) dataToUpdate.title = title;
+  if (description !== undefined) dataToUpdate.description = description;
+  if (dueDate !== undefined) dataToUpdate.dueDate = new Date(dueDate);
+  if (priority !== undefined) dataToUpdate.priority = priority;
+  if (status !== undefined) dataToUpdate.status = status;
+  if (assignedTo !== undefined) dataToUpdate.assignedTo = assignedTo;
+  if (position !== undefined) dataToUpdate.position = position;
 
   if (!userId) {
     res.status(401).json({ message: "invalid Token" });
@@ -191,44 +199,94 @@ export const updateTask = async (req: Request, res: Response) => {
     return;
   }
 
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
-    include: {
-      project: {
-        select: { workspaceId: true },
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        project: {
+          select: { workspaceId: true },
+        },
       },
-    },
-  });
+    });
 
-  if (!task) {
-    res.status(404).json({ message: "Task not found" });
+    if (!task) {
+      res.status(404).json({ message: "Task not found" });
+      return;
+    }
+
+    const isMember = await prisma.workspaceMember.findFirst({
+      where: {
+        id: userId,
+        workspaceId: task?.project.workspaceId,
+      },
+    });
+
+    if (!isMember) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: dataToUpdate,
+    });
+
+    res.status(200).json(updatedTask);
+    return;
+  } catch (error) {
+    console.error("Error in updateTask:", error);
+    res.status(500).json({ message: "Internal server error" });
+    return;
+  }
+};
+
+export const deleteTask = async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const taskId = req.params.id;
+
+  if (!userId) {
+    res.status(401).json({ message: "Invalid token" });
     return;
   }
 
-  const isMember = await prisma.workspaceMember.findFirst({
-    where: {
-      id: userId,
-      workspaceId: task?.project.workspaceId,
-    },
-  });
-
-  if (!isMember) {
-    res.status(403).json({ message: "Access denied" });
+  if (!taskId) {
+    res.status(400).json({ message: "Task ID is required" });
     return;
   }
 
-  const dataToUpdate: Record<string, any> = {};
-  if (title) dataToUpdate.title = title;
-  if (description) dataToUpdate.description = description;
-  if (dueDate) dataToUpdate.dueDate = new Date(dueDate);
-  if (priority) dataToUpdate.priority = priority;
-  if (status) dataToUpdate.status = status;
-  if (assignedTo) dataToUpdate.assignedTo = assignedTo;
-  if (tags) dataToUpdate.tags = tags;
-  if (comments) dataToUpdate.comments = comments;
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        project: {
+          select: { workspaceId: true },
+        },
+      },
+    });
 
-  const updatedTask = await prisma.task.update({
-    where: { id: taskId },
-    data: dataToUpdate,
-  });
+    if (!task) {
+      res.status(404).json({ message: "Task not found" });
+      return;
+    }
+
+    const isOwner = await prisma.workspaceMember.findFirst({
+      where: {
+        userId,
+        workspaceId: task.project.workspaceId,
+        role: "OWNER",
+      },
+    });
+
+    if (!isOwner) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    await prisma.task.delete({ where: { id: taskId } });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error in deleteTask:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

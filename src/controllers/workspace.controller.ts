@@ -102,3 +102,35 @@ export const getLastUpdatedWorkspace = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Serverfehler" });
   }
 };
+
+export const updateWorkspace = async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const workspaceId = req.params.id;
+  const { name } = req.body;
+
+  if (!userId) {
+    res.status(401).json({ message: "Invalid token" });
+    return;
+  }
+
+  if (!name?.trim()) {
+    res.status(400).json({ message: "Name is required" });
+    return;
+  }
+
+  try {
+    const workspace = await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name, updatedAt: new Date() },
+      include: {
+        members: true,
+        projects: true,
+      },
+    });
+
+    res.status(200).json(workspace);
+  } catch (error) {
+    console.error("Error updating workspace:", error);
+    res.status(500).json({ message: "Server error while updating workspace" });
+  }
+};

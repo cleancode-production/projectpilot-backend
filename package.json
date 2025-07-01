@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
     "prebuild": "npx prisma migrate deploy",
-    "build": "npx tsc && npm install",
+    "build": "npx tsc",
     "start": "node dist/index.js",
     "postbuild": "prisma generate"
   },

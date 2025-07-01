@@ -1,5 +1,30 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
+import { Prisma } from "@prisma/client";
+
+// Auswahl der Felder, die du aus der Datenbank holen willst
+const userSelect = {
+  id: true,
+  email: true,
+  username: true,
+  fullName: true,
+  role: true,
+  profileImageURL: true,
+  memberships: {
+    select: {
+      role: true,
+      workspace: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
+} as const;
+
+// Typ des Objekts, das Prisma bei diesem Select zurückliefert
+type UserWithWorkspaces = Prisma.UserGetPayload<{ select: typeof userSelect }>;
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.userId;
@@ -10,27 +35,9 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
-    const user = await prisma.user.findUnique({
+    const user: UserWithWorkspaces | null = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        fullName: true,
-        role: true,
-        profileImageURL: true,
-        memberships: {
-          select: {
-            role: true,
-            workspace: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
+      select: userSelect,
     });
 
     if (!user) {
@@ -61,7 +68,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 
 export const deleteUserById = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const userId = req.user?.userId;
 
@@ -84,7 +91,7 @@ export const deleteUserById = async (
 
 export const updateUserProfile = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const userId = req.user?.userId;
 

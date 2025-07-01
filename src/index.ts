@@ -26,5 +26,5 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/users", usersRoutes); // Ensure this is the last route to avoid conflicts
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server  is running on http://localhost:${PORT}`);
 });

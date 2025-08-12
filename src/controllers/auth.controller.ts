@@ -6,7 +6,6 @@ import prisma from "../lib/prisma";
 export const registerUser = async (req: Request, res: Response) => {
   const { password, firstName, lastName, username } = req.body;
   const email = req.body.email.trim().toLowerCase();
-
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {

@@ -11,6 +11,7 @@ import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
+
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -20,6 +21,7 @@ app.use(
   })
 );
 app.use(cookieParser());
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;

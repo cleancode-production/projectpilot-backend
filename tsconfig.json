@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
     "target": "ES2020", // moderne JS-Features
-    "module": "commonjs", // Standard für Node.js / Express
+    "module": "CommonJS", // Standard für Node.js / Express
     "rootDir": "src", // dein Quellcode-Ordner
     "outDir": "dist", // Kompilierte JS-Dateien
     "strict": true, // maximale Typprüfung
     "esModuleInterop": true, // Import-Kompatibilität
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node", // Node.js Modulauflösung
-    "skipLibCheck": true // schnellere Builds, weniger Probleme
+    "skipLibCheck": true, // schnellere Builds, weniger Probleme
+    "typeRoots": ["./node_modules/@types", "./src/types"], // Hin
+        "resolveJsonModule": true // Empfohlen für Node.js
   },
-  "include": ["src"]
+  "include": [
+    "src/**/*", // Alle Dateien im src Ordner
+    "src/types/**/*" // Explizit die types einschließen
+  ]
 }

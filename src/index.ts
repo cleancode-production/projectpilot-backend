@@ -7,9 +7,19 @@ import projectRoutes from "./routes/project.route";
 import taskRoutes from "./routes/task.route";
 import workspaceRoutes from "./routes/workspace.route";
 import usersRoutes from "./routes/users.route";
+import cookieParser from "cookie-parser";
+
 dotenv.config();
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
+app.use(cookieParser());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;

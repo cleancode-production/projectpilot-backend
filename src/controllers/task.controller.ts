@@ -20,7 +20,6 @@ export const createTask = async (req: Request, res: Response) => {
   }
 
   try {
-    // 1. Projekt holen → um workspaceId zu bekommen
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: { workspaceId: true },
@@ -31,7 +30,6 @@ export const createTask = async (req: Request, res: Response) => {
       return;
     }
 
-    // 2. Prüfen, ob der User Mitglied im Workspace ist
     const isMember = await prisma.workspaceMember.findFirst({
       where: {
         userId: req.user.userId,
@@ -44,7 +42,6 @@ export const createTask = async (req: Request, res: Response) => {
       return;
     }
 
-    // 3. Task erstellen
     const newTask = await prisma.task.create({
       data: {
         title,
@@ -88,7 +85,6 @@ export const getTasksByProject = async (req: Request, res: Response) => {
       return;
     }
 
-    // 2. Prüfen, ob User Mitglied im Workspace ist
     const isMember = await prisma.workspaceMember.findFirst({
       where: {
         userId: req.user.userId,
@@ -101,10 +97,9 @@ export const getTasksByProject = async (req: Request, res: Response) => {
       return;
     }
 
-    // 3. Tasks abrufen
     const tasks = await prisma.task.findMany({
       where: { projectId },
-      orderBy: { position: "asc" }, // Board-Sortierung
+      orderBy: { position: "asc" },
     });
 
     res.status(200).json(tasks);
@@ -130,7 +125,6 @@ export const getTaskById = async (req: Request, res: Response) => {
     return;
   }
   try {
-    // 1. Task holen
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       include: {
@@ -145,7 +139,6 @@ export const getTaskById = async (req: Request, res: Response) => {
       return;
     }
 
-    // 2. Prüfen, ob User Mitglied im Workspace ist
     const isMember = await prisma.workspaceMember.findFirst({
       where: {
         userId,

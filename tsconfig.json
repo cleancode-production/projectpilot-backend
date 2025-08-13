@@ -8,11 +8,15 @@
     "esModuleInterop": true, // Import-Kompatibilität
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true, // schnellere Builds, weniger Probleme
+
     "typeRoots": ["./node_modules/@types", "./src/types"], // Hinzugefügt
     "resolveJsonModule": true // Empfohlen für Node.js
+
   },
   "include": [
     "src/**/*", // Alle Dateien im src Ordner
     "src/types/**/*" // Explizit die types einschließen
   ]
+
 }
+

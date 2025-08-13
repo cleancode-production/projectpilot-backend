@@ -30,7 +30,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
   const workspace = await prisma.workspace.create({
     data: {
-      name: "My Workspace",
+      name: "Mein Workspace",
       userId: newUser.id,
       members: {
         create: {
@@ -44,13 +44,13 @@ export const registerUser = async (req: Request, res: Response) => {
   const accessToken = jwt.sign(
     { userId: newUser.id, email: newUser.email, role: newUser.role },
     process.env.JWT_SECRET!,
-    { expiresIn: "15m" },
+    { expiresIn: "15m" }
   );
 
   const refreshToken = jwt.sign(
     { userId: newUser.id, email: newUser.email, role: newUser.role },
     process.env.REFRESH_TOKEN_SECRET!,
-    { expiresIn: "7d" },
+    { expiresIn: "7d" }
   );
 
   // Speichern des Refresh Tokens in der DB
@@ -69,18 +69,27 @@ export const registerUser = async (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 
-  res.status(201).json({
-    message: "User registered",
-    userId: newUser.id,
+  res.status(200).json({
+    message: "Login successful",
     accessToken,
-    workspaceId: workspace.id,
+
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      fullName: newUser.firstName + " " + newUser.lastName,
+      username: newUser.username,
+      role: newUser.role,
+      workspaceId: workspace?.id || null,
+    },
   });
 };
 
 export const loginUser = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { password } = req.body;
@@ -120,14 +129,21 @@ export const loginUser = async (
       process.env.JWT_SECRET,
       {
         expiresIn: "15m",
-      },
+      }
     );
 
     const refreshToken = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       process.env.REFRESH_TOKEN_SECRET!,
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -139,8 +155,17 @@ export const loginUser = async (
     res.status(200).json({
       message: "Login successful",
       accessToken,
-      workspaceId: workspace?.id || null,
-      userId: user.id,
+
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.firstName + " " + user.lastName,
+        username: user.username,
+        role: user.role,
+        workspaceId: workspace?.id || null,
+      },
     });
   } catch (err) {
     next(err);
@@ -169,14 +194,14 @@ export const refreshTokenAccess = async (req: Request, res: Response) => {
     // Token validieren
     const decoded = jwt.verify(
       refreshToken,
-      process.env.REFRESH_TOKEN_SECRET!,
+      process.env.REFRESH_TOKEN_SECRET!
     ) as jwt.JwtPayload;
 
     // Neuen Access-Token erstellen
     const newAccessToken = jwt.sign(
       { userId: decoded.userId, email: decoded.email, role: decoded.role },
       process.env.JWT_SECRET!,
-      { expiresIn: "15m" },
+      { expiresIn: "15m" }
     );
 
     res.json({ accessToken: newAccessToken });

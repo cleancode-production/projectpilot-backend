@@ -5,29 +5,42 @@ import prisma from "../lib/prisma";
 export const getAllWorkspaces = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.userId;
+    const view = (req.query.view as string) || "full";
 
+    if (!userId) {
+      res.status(401).json({ message: "Invalid token" });
+      return;
+    }
+
+    //  nach updatedAt DESC sortieren
+    const commonWhere = {
+      OR: [{ userId }, { members: { some: { userId } } }],
+    };
+
+    if (view === "summary") {
+      const workspaces = await prisma.workspace.findMany({
+        where: commonWhere,
+        orderBy: { updatedAt: "desc" },
+        select: { id: true, name: true, updatedAt: true },
+      });
+      res.status(200).json(workspaces);
+      return;
+    }
+
+    // volle Ansicht (falls du sie brauchst)
     const workspaces = await prisma.workspace.findMany({
-      where: {
-        OR: [
-          { userId },
-          { members: { some: { userId } } }, // auch als Mitglied
-        ],
-      },
-      include: {
-        members: true,
-        projects: true,
-      },
+      where: commonWhere,
+      orderBy: { updatedAt: "desc" },
+      include: { members: true, projects: true },
     });
 
     res.status(200).json(workspaces);
   } catch (error) {
-    console.error("Fehler beim Abrufen der Workspaces:", error);
     res
       .status(500)
       .json({ message: "Serverfehler beim Abrufen der Workspaces" });
   }
 };
-
 export const getWorkspaceById = async (req: Request, res: Response) => {
   const userId = req.user?.userId;
   const workspaceId = req.params.id;
@@ -55,7 +68,7 @@ export const getWorkspaceById = async (req: Request, res: Response) => {
 
     // Check if the user is a member of the workspace
     const isMember = workspace.members.some(
-      (member) => member.userId === userId,
+      (member) => member.userId === userId
     );
     if (!isMember && workspace.userId !== userId) {
       res.status(403).json({ message: "Access denied" });
@@ -111,7 +124,7 @@ export const getLastUpdatedWorkspace = async (req: Request, res: Response) => {
   const userId = req.user?.userId;
 
   if (!userId) {
-    res.status(400).json({ message: "Invalid token" });
+    res.status(401).json({ message: "Invalid token" });
     return;
   }
 

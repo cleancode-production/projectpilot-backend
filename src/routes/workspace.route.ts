@@ -14,13 +14,11 @@ import { isWorkspaceOwner } from "../middleware/role.middleware";
 
 const router = Router();
 
-router.use(verifyToken);
-
-router.get("/", getAllWorkspaces);
-router.get("/:id", getWorkspaceById);
-router.get("/last", getLastUpdatedWorkspace);
-router.post("/:id", createWorkspace);
-router.patch("/", updateWorkspace);
+router.get("/", verifyToken, getAllWorkspaces);
+router.get("/last", verifyToken, getLastUpdatedWorkspace);
+router.get("/:id", verifyToken, getWorkspaceById);
+router.post("/", verifyToken, createWorkspace);
+router.patch("/", verifyToken, updateWorkspace);
 router.post(
   "/:workspaceId/members",
   verifyToken,
@@ -34,7 +32,7 @@ router.delete(
   removeMember
 );
 router.patch(
-  "/:wokrspaceId/members/:userId",
+  "/:workspaceId/members/:userId",
   verifyToken,
   isWorkspaceOwner,
   updateMemberRole
